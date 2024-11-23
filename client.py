@@ -36,7 +36,7 @@ cipher = AES.new(aes_key, AES.MODE_CBC, iv = os.urandom(AES.block_size))
 #video capture
 cap = cv2.VideoCapture(0)
 
-print("Live Streaming video(press 'q' to end)")
+print("Live Streaming video(press 'Ctrl+C' to end)")
 
 def send_large_data(data, client_socket, address):
     #Splits data into smaller chunks and sends over UDP
