@@ -26,18 +26,26 @@ client_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 #Constants
 SERVER_IP = '127.0.0.1'
 SERVER_PORT = 5000
-KEY = encrypted_aes_key
 
 client_socket.sendto(encrypted_aes_key, (SERVER_IP, SERVER_PORT))
 
 
 #Initialize AES cipher
-cipher = AES.new(KEY, AES.MODE_CBC, iv = os.urandom(AES.block_size))
+cipher = AES.new(aes_key, AES.MODE_CBC, iv = os.urandom(AES.block_size))
 
 #video capture
 cap = cv2.VideoCapture(0)
 
 print("Live Streaming video(press 'q' to end)")
+
+def send_large_data(data, client_socket, address):
+    #Splits data into smaller chunks and sends over UDP
+    CHUNK_SIZE = 1024
+    data_length = len(data)
+
+    for i in range(0, data_length, CHUNK_SIZE):
+        chunk = data[i:i + CHUNK_SIZE]
+        client_socket.sendto(chunk, address)
 
 while cap.isOpened():
     ret, frame = cap.read()
@@ -49,7 +57,7 @@ while cap.isOpened():
     encrypted_frame = cipher.encrypt(pad(serialized_frame, AES.block_size))
 
     #send to server
-    client_socket.sendto(encrypted_frame, (SERVER_IP, SERVER_PORT))
+    send_large_data(encrypted_frame, client_socket, (SERVER_IP, SERVER_PORT))
 
     #Display local video
     cv2.imshow("Client - Sending Video", frame)

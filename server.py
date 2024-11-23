@@ -42,7 +42,7 @@ with open("private.pem", "rb") as f:
 cipher_rsa = PKCS1_OAEP.new(private_key)
 decrypted_aes_key = cipher_rsa.decrypt(encrypted_aes_key)
 
-print(decrypted_aes_key)
+print(f"Decrypted AES Key: {decrypted_aes_key}")
 
 KEY = decrypted_aes_key
 
@@ -51,19 +51,42 @@ KEY = decrypted_aes_key
 cipher = AES.new(KEY, AES.MODE_CBC, iv = os.urandom(AES.block_size))
 
 print("Receiving Live Stream(press 'Ctrl+C' to end)")
-while True:
-    #Receive data from client
-    encrypted_frame, client_address = server_socket.recvfrom(65535)
 
+#incoming data chunks
+frame_data = b""
+
+def receive_large_data(server_socket):
+    #receives data in chunks and reassembles them
+    global frame_data
+    CHUNK_SIZE = 1024
+
+    while True:
+        chunk, _ = server_socket.recvfrom(CHUNK_SIZE)
+        if chunk:
+            frame_data += chunk
+        
+        if len(chunk) < CHUNK_SIZE:
+            break
+
+while True:
+    #Receive data from client in chunks
+    receive_large_data(server_socket)
+
+    if not frame_data:
+        continue
+    #encrypted_frame, client_address = server_socket.recvfrom(65535)
     try:
         #Decrypt and deserialize the frame
-        decrypted_frame = unpad(cipher.decrypt(encrypted_frame), AES.block_size)
+        decrypted_frame = unpad(cipher.decrypt(frame_data), AES.block_size)
         frame = pickle.loads(decrypted_frame)
 
         #Display received video
         cv2.imshow("Server - Receiving Video", frame)
         if cv2.waitKey(1) & 0xFF == ord('q'):
             break
+
+        #reset frame data buffer
+        frame_data = b""
 
     except Exception as e:
         print(f"Error decrypting frame: {e}")
