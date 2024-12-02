@@ -32,7 +32,8 @@ server_socket.bind((SERVER_IP, SERVER_PORT))
 
 # Receive AES-encrypted key from the client
 # AES is used for symmetric encryption of the video frames.
-encrypted_aes_key, client_address = server_socket.recvfrom(256)  # 256 bytes to accommodate RSA-encrypted AES key
+# 256 bytes to accommodate RSA-encrypted AES key
+encrypted_aes_key, client_address = server_socket.recvfrom(256)
 
 # Load the server's private key to decrypt the received AES key
 with open("private.pem", "rb") as f:
